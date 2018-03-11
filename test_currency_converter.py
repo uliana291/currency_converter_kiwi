@@ -1,6 +1,5 @@
-from currency_converter import get_currency, converter
-from click.testing import CliRunner
-import json
+from currency_converter import get_currency, convert_currency, CurrencyNotFoundError
+from pytest import raises
 
 
 def test_currency_symbols_recognition():
@@ -11,22 +10,14 @@ def test_currency_symbols_recognition():
 
 
 def test_converter():
-    runner = CliRunner()
+    with raises(CurrencyNotFoundError):
+        convert_currency(5.0, 'test', None)
 
-    result = runner.invoke(converter, ['--amount', '5.0', '--input_currency', 'test'])
-    assert result.exit_code == 0
-    assert "Input currency is not found" in result.output
-
-    result = runner.invoke(converter, ['--amount', '5.0', '--input_currency', 'GBP'])
-    results = json.loads(result.output)
-    assert result.exit_code == 0
+    results = convert_currency(5.0, 'GBP', None)
     assert results['input']['amount'] == 5.0 and results['input']['currency'] == 'GBP'
     assert isinstance(results['output']['RUB'], float) and isinstance(results['output']['USD'], float)
 
-    result = runner.invoke(converter, ['--amount', '10.0', '--input_currency', 'GBP',
-                                       '--output_currency', 'RUB'])
-    results = json.loads(result.output)
-    assert result.exit_code == 0
+    results = convert_currency(10.0, 'GBP', 'RUB')
     assert results['input']['amount'] == 10.0 and results['input']['currency'] == 'GBP'
     assert isinstance(results['output']['RUB'], float)
 

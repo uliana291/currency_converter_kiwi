@@ -1,21 +1,18 @@
-import click
 import requests
-import json
 from bs4 import BeautifulSoup
 from ruamel.yaml import YAML
 
 
-@click.command()
-@click.option('--amount', help='amount of money in original currency, float', type=float, required=True)
-@click.option('--input_currency', help='input currency, 3 letters name or currency symbol', required=True)
-@click.option('--output_currency', help='requested/output currency - 3 letters name or currency symbol',
-              required=False)
-def converter_cli(amount, input_currency, output_currency):
-    result = convert_currency(amount, input_currency, output_currency)
-    if 'error' in result:
-        print(result['error'])
-    else:
-        print(json.dumps(result))
+class IncorrectInputError(Exception):
+    pass
+
+
+class CurrencyNotFoundError(IncorrectInputError):
+    pass
+
+
+class MultipleISOCodesError(IncorrectInputError):
+    pass
 
 
 def convert_currency(amount, input_currency, output_currency):
@@ -27,12 +24,6 @@ def convert_currency(amount, input_currency, output_currency):
     :return: dictionary output result, or error message
     """
     input_currency, output_currency = get_currency(input_currency, output_currency)
-    if not input_currency:
-        message = (
-            "Input currency is not found. "
-            "Check whether you specified a definition for multivalued symbols in configs.yaml"
-        )
-        return {"error": message}
     result = dict(
         input=dict(
             amount=amount,
@@ -52,6 +43,9 @@ def get_predefined_currency_match(symbol):
     check configs.yaml for predefined default ISO code
     :param symbol: symbol of currency
     :return: predefined ISO code, or None if not predefined
+
+    Raises:
+        YAMLError: An error occurred while processing yaml file.
     """
     yaml_config = YAML()
     with open('configs.yaml') as stream:
@@ -63,14 +57,20 @@ def get_predefined_currency_match(symbol):
         except yaml_config.YAMLError as exc:
             print('Something wrong with the configs.yaml file:')
             print(exc)
+            raise
 
 
 def get_iso_code(requested_currency, currencies):
     """
-    Get ISO code for requested currency
+    Get ISO code for requested currency.
+
     :param requested_currency: symbol/ISO code of currency
     :param currencies: dictionary with 'ISO code' as a key and 'Symbol' as a value
-    :return: ISO code if found, otherwise None
+    :return: ISO code if found
+
+    Raises:
+        MultipleISOCodesError: An error occurred trying to find a definition of multiple symbol currency.
+        CurrencyNotFoundError: An error occurred trying to find currency ISO code/symbol.
     """
     if requested_currency not in currencies:
         currency_codes = []
@@ -81,10 +81,15 @@ def get_iso_code(requested_currency, currencies):
         if len(currency_codes) > 0:
             if len(currency_codes) > 1:
                 iso_currency = get_predefined_currency_match(requested_currency)
+                if iso_currency is None:
+                    raise MultipleISOCodesError(
+                        "Definition for multiple symbol currency '{}'"
+                        " is not found in configs.yaml".format(requested_currency)
+                    )
             else:
                 iso_currency = currency_codes[0]
         else:
-            iso_currency = None
+            raise CurrencyNotFoundError('could not found currency symbol "{}"'.format(requested_currency))
     else:
         iso_currency = requested_currency
     return iso_currency
@@ -152,6 +157,3 @@ def get_amount_in_currency(amount, input_currency, output_currency):
     converted_amount = soup.find('span', attrs={'class': 'uccResultAmount'}).next
     return float(converted_amount)
 
-
-if __name__ == '__main__':
-    converter_cli()
