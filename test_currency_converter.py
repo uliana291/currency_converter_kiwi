@@ -1,4 +1,4 @@
-from currency_converter import get_currency, convert_currency, CurrencyNotFoundError
+from currency_converter import convert_currency, CurrencyNotFoundError, get_currency
 from pytest import raises
 
 
@@ -20,7 +20,3 @@ def test_converter():
     results = convert_currency(10.0, 'GBP', 'RUB')
     assert results['input']['amount'] == 10.0 and results['input']['currency'] == 'GBP'
     assert isinstance(results['output']['RUB'], float)
-
-
-
-

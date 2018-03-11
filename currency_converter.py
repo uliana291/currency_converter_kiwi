@@ -1,5 +1,5 @@
-import requests
 from bs4 import BeautifulSoup
+import requests
 from ruamel.yaml import YAML
 
 
@@ -24,10 +24,7 @@ def convert_currency(amount, input_currency, output_currency):
     :return: dictionary output result, or error message
     """
     input_currency, output_currency = get_currency(input_currency, output_currency)
-    result = dict(
-        input=dict(
-            amount=amount,
-            currency=input_currency))
+    result = dict(input=dict(amount=amount, currency=input_currency))
     if output_currency:
         amount = {}
         amount[output_currency] = get_amount_in_currency(amount, input_currency, output_currency)
@@ -156,4 +153,3 @@ def get_amount_in_currency(amount, input_currency, output_currency):
     soup = BeautifulSoup(search.content, 'html.parser')
     converted_amount = soup.find('span', attrs={'class': 'uccResultAmount'}).next
     return float(converted_amount)
-
