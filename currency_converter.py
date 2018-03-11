@@ -10,14 +10,29 @@ from ruamel.yaml import YAML
 @click.option('--input_currency', help='input currency, 3 letters name or currency symbol', required=True)
 @click.option('--output_currency', help='requested/output currency - 3 letters name or currency symbol',
               required=False)
-def converter(amount, input_currency, output_currency):
+def converter_cli(amount, input_currency, output_currency):
+    result = convert_currency(amount, input_currency, output_currency)
+    if 'error' in result:
+        print(result['error'])
+    else:
+        print(json.dumps(result))
+
+
+def convert_currency(amount, input_currency, output_currency):
+    """
+    Convert input currency. If output_currency is missing, then all currencies conversion will be returned
+    :param amount: float value of requested amount
+    :param input_currency: ISO code/Symbol of input currency
+    :param output_currency: ISO code/Symbol of output currency, or None
+    :return: dictionary output result, or error message
+    """
     input_currency, output_currency = get_currency(input_currency, output_currency)
     if not input_currency:
-        print(
+        message = (
             "Input currency is not found. "
             "Check whether you specified a definition for multivalued symbols in configs.yaml"
         )
-        return
+        return {"error": message}
     result = dict(
         input=dict(
             amount=amount,
@@ -28,7 +43,7 @@ def converter(amount, input_currency, output_currency):
         result['output'] = amount
     else:
         result['output'] = get_amount_in_all_currencies(amount, input_currency)
-    print(json.dumps(result))
+    return result
 
 
 def get_predefined_currency_match(symbol):
@@ -139,4 +154,4 @@ def get_amount_in_currency(amount, input_currency, output_currency):
 
 
 if __name__ == '__main__':
-    converter()
+    converter_cli()
