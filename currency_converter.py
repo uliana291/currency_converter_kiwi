@@ -21,14 +21,14 @@ def convert_currency(amount, input_currency, output_currency):
     :param amount: float value of requested amount
     :param input_currency: ISO code/Symbol of input currency
     :param output_currency: ISO code/Symbol of output currency, or None
-    :return: dictionary output result, or error message
+    :return: dictionary output result
     """
     input_currency, output_currency = get_currency(input_currency, output_currency)
     result = dict(input=dict(amount=amount, currency=input_currency))
     if output_currency:
-        amount = {}
-        amount[output_currency] = get_amount_in_currency(amount, input_currency, output_currency)
-        result['output'] = amount
+        converted_amount = {}
+        converted_amount[output_currency] = get_amount_in_currency(amount, input_currency, output_currency)
+        result['output'] = converted_amount
     else:
         result['output'] = get_amount_in_all_currencies(amount, input_currency)
     return result
@@ -152,4 +152,4 @@ def get_amount_in_currency(amount, input_currency, output_currency):
     search = session.get(get_request)
     soup = BeautifulSoup(search.content, 'html.parser')
     converted_amount = soup.find('span', attrs={'class': 'uccResultAmount'}).next
-    return float(converted_amount)
+    return float(converted_amount.replace(',', ''))
