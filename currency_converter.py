@@ -24,7 +24,12 @@ def convert_currency(amount, input_currency, output_currency):
     :return: dictionary output result
     """
     input_currency, output_currency = get_currency(input_currency, output_currency)
-    result = dict(input=dict(amount=amount, currency=input_currency))
+    result = {
+        'input': {
+            'amount': amount,
+            'currency': input_currency
+        }
+    }
     if output_currency:
         converted_amount = {}
         converted_amount[output_currency] = get_amount_in_currency(amount, input_currency, output_currency)
@@ -70,13 +75,13 @@ def get_iso_code(requested_currency, currencies):
         CurrencyNotFoundError: An error occurred trying to find currency ISO code/symbol.
     """
     if requested_currency not in currencies:
-        currency_codes = []
+        matched_codes = []
         for code, sym in currencies.items():
             if sym == requested_currency:
-                currency_codes.append(code)
+                matched_codes.append(code)
 
-        if len(currency_codes) > 0:
-            if len(currency_codes) > 1:
+        if len(matched_codes) > 0:
+            if len(matched_codes) > 1:
                 iso_currency = get_predefined_currency_match(requested_currency)
                 if iso_currency is None:
                     raise MultipleISOCodesError(
@@ -84,7 +89,7 @@ def get_iso_code(requested_currency, currencies):
                         " is not found in configs.yaml".format(requested_currency)
                     )
             else:
-                iso_currency = currency_codes[0]
+                iso_currency = matched_codes[0]
         else:
             raise CurrencyNotFoundError('could not found currency symbol "{}"'.format(requested_currency))
     else:
